@@ -1,9 +1,13 @@
 // create a 4x4 matrix to the parallel projection / view matrix
 function mat4x4Parallel(prp, srp, vup, clip) {
     // 1. translate PRP to origin
+
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
+
     // 3. shear such that CW is on the z-axis
+
     // 4. translate near clipping plane to origin
+
     // 5. scale such that view volume bounds are ([-1,1], [-1,1], [-1,0])
 
     // ...
@@ -14,8 +18,11 @@ function mat4x4Parallel(prp, srp, vup, clip) {
 // create a 4x4 matrix to the perspective projection / view matrix
 function mat4x4Perspective(prp, srp, vup, clip) {
     // 1. translate PRP to origin
+
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
+
     // 3. shear such that CW is on the z-axis
+    
     // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
 
     // ...
@@ -27,6 +34,10 @@ function mat4x4Perspective(prp, srp, vup, clip) {
 function mat4x4MPar() {
     let mpar = new Matrix(4, 4);
     // mpar.values = ...;
+    mpar.values = [[1, 0, 0, 0],
+                   [0, 1, 0, 0],
+                   [0, 0, 0, 0],
+                   [0, 0, 0, 1]]
     return mpar;
 }
 
@@ -34,6 +45,10 @@ function mat4x4MPar() {
 function mat4x4MPer() {
     let mper = new Matrix(4, 4);
     // mper.values = ...;
+    mper.values = [[1, 0, 0, 0],
+                   [0, 1, 0, 0],
+                   [0, 0, 1, 0],
+                   [0, 0, -1, 0]]
     return mper;
 }
 
