@@ -3,6 +3,7 @@ function mat4x4Parallel(prp, srp, vup, clip) {
     // 1. translate PRP to origin
     let translate = new Matrix;
     Mat4x4Translate(translate, -prp.x, -prp.y, -prp.z);
+
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
     // find n, u, and v
     let n = new Vector3();
@@ -12,12 +13,38 @@ function mat4x4Parallel(prp, srp, vup, clip) {
     n = prp - srp;
     let n_normal = n.normalize();
 
-    
+    u = vup.cross(n_normal);
+    let u_normal = u.normalize();
+
+    v = n_normal.cross(u_normal);
+
+    // create rotation
+    let rotate = new Matrix;
+    //Mat4x4 
+
     // 3. shear such that CW is on the z-axis
+    let cW = new Vector3();
+    cW.x = (clip.left + clip.right)/2;
+    cW.y = (clip.bottom + clip.top)/2;
+    cW.z = z;
+
+    let shx_par = (-x);
+    let shy_par = x;
+
+    let shear = new Matrix;
+    Mat4x4ShearXY(shear, )
 
     // 4. translate near clipping plane to origin
+    let translate_near = new Matrix;
+    Mat4x4Translate(translate_near, 0, 0, clip.near);
 
     // 5. scale such that view volume bounds are ([-1,1], [-1,1], [-1,0])
+    let scale = new Matrix;
+    let s_par_x = 2/(clip.right - clip.left);
+    let s_par_y = 2/(clip.top - clip.bottom);
+    let s_par_z = 1/clip.far;
+
+    Mat4x4Scale(scale, s_par_x, s_par_y, s_par_z);
 
     // ...
     // let transform = Matrix.multiply([...]);
