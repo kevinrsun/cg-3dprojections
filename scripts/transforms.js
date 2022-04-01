@@ -1,69 +1,103 @@
 // create a 4x4 matrix to the parallel projection / view matrix
 function mat4x4Parallel(prp, srp, vup, clip) {
     // 1. translate PRP to origin
-    let translate = new Matrix;
-    Mat4x4Translate(translate, -prp.x, -prp.y, -prp.z);
+    let translate_par = new Matrix(4,4);
+    mat4x4Translate(translate_par, -prp.x, -prp.y, -prp.z);
 
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
     // find n, u, and v
-    let n = new Vector3();
-    let u = new Vector3();
-    let v = new Vector3();
 
-    n = prp - srp;
-    let n_normal = n.normalize();
+    let n = prp.subtract(srp);
+    n.normalize();
 
-    u = vup.cross(n_normal);
-    let u_normal = u.normalize();
+    let u = vup.cross(n);
+    u.normalize();
 
-    v = n_normal.cross(u_normal);
+    let v = n.cross(u);
 
     // create rotation
-    let rotate = new Matrix;
-    //Mat4x4 
+    let rotate_par = new Matrix(4,4);
+    rotate_par.values = [[u.x, u.y, u.z, 0],
+                         [v.x, v.y, v.z, 0],
+                         [n.x, n.y, n.z, 0],
+                         [0, 0, 0, 1]];
 
     // 3. shear such that CW is on the z-axis
-    let cW = new Vector3();
-    cW.x = (clip.left + clip.right)/2;
-    cW.y = (clip.bottom + clip.top)/2;
-    cW.z = z;
+    let cW = new Vector(3);
+    cW.x = (clip[0] + clip[1])/2;
+    cW.y = (clip[2] + clip[3])/2;
+    cW.z = -(clip[4]);
 
-    let shx_par = (-x);
-    let shy_par = x;
+    let shx_par = (-cW.x)/cW.z; 
+    let shy_par = (-cW.y)/cW.z;
 
-    let shear = new Matrix;
-    Mat4x4ShearXY(shear, )
+    let shear_par = new Matrix(4,4);
+    mat4x4ShearXY(shear_par, shx_par, shy_par);
 
     // 4. translate near clipping plane to origin
-    let translate_near = new Matrix;
-    Mat4x4Translate(translate_near, 0, 0, clip.near);
+    let translate_near = new Matrix(4,4);
+    mat4x4Translate(translate_near, 0, 0, clip[4]);
 
     // 5. scale such that view volume bounds are ([-1,1], [-1,1], [-1,0])
-    let scale = new Matrix;
-    let s_par_x = 2/(clip.right - clip.left);
-    let s_par_y = 2/(clip.top - clip.bottom);
-    let s_par_z = 1/clip.far;
+    let scale_par = new Matrix(4,4);
+    let s_par_x = 2/(clip[1] - clip[0]);
+    let s_par_y = 2/(clip[3] - clip[2]);
+    let s_par_z = 1/clip[5];
 
-    Mat4x4Scale(scale, s_par_x, s_par_y, s_par_z);
+    mat4x4Scale(scale_par, s_par_x, s_par_y, s_par_z);
 
     // ...
     // let transform = Matrix.multiply([...]);
-    // return transform;
+    let transform_par = Matrix.multiply([scale_par, translate_near, shear_par, rotate_par, translate_par]);
+    return transform_par;
 }
 
 // create a 4x4 matrix to the perspective projection / view matrix
 function mat4x4Perspective(prp, srp, vup, clip) {
     // 1. translate PRP to origin
+    let translate_per = new Matrix(4,4);
+    mat4x4Translate(translate_per, -prp.x, -prp.y, -prp.z);
 
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
+    let n = prp.subtract(srp);
+    n.normalize();
+
+    let u = vup.cross(n);
+    u.normalize();
+
+    let v = n.cross(u);
+
+    // create rotation
+    let rotate_per = new Matrix(4,4);
+    rotate_per.values = [[u.x, u.y, u.z, 0],
+                         [v.x, v.y, v.z, 0],
+                         [n.x, n.y, n.z, 0],
+                         [0, 0, 0, 1]];
 
     // 3. shear such that CW is on the z-axis
+    let cW = new Vector(3);
+    cW.x = (clip[0] + clip[1])/2;
+    cW.y = (clip[2] + clip[3])/2;
+    cW.z = -(clip[4]);
+
+    let shx_par = (-cW.x)/cW.z; 
+    let shy_par = (-cW.y)/cW.z;
+
+    let shear_par = new Matrix(4,4);
+    mat4x4ShearXY(shear_par, shx_par, shy_par);
 
     // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
+    let scale_per = new Matrix(4,4);
+    let s_per_x = (clip[4]*2)/((clip[1] - clip[0]) * clip[5]);
+    let s_per_y = (clip[4]*2)/((clip[3] - clip[2]) * clip[5]);
+    let s_per_z = 1/clip[5];
+
+    mat4x4Scale(scale_per, s_per_x, s_per_y, s_per_z);
 
     // ...
     // let transform = Matrix.multiply([...]);
-    // return transform;
+    let transform_per = Matrix.multiply([scale_per, shear_par, rotate_per, translate_per]);
+    return transform_per;
 }
 
 // create a 4x4 matrix to project a parallel image on the z=0 plane

@@ -29,6 +29,7 @@ function init() {
             srp: Vector3(20, 20, -40),
             vup: Vector3(0, 1, 0),
             clip: [-19, 5, -10, 8, 12, 100]
+            //use example in class to check if correct
         },
         models: [
             {
