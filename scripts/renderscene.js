@@ -9,6 +9,7 @@ const BOTTOM = 8;  // binary 001000
 const TOP =    4;  // binary 000100
 const FAR =    2;  // binary 000010
 const NEAR =   1;  // binary 000001
+//inside view = 0; binary 000000
 const FLOAT_EPSILON = 0.000001;
 
 // Initialization function - called when web page loads
@@ -153,6 +154,54 @@ function clipLineParallel(line) {
     let out1 = outcodeParallel(p1);
     
     // TODO: implement clipping here!
+    let accepted = false;
+    let new_p0 = p0;
+    let new_p1 = p1;
+
+    while (!accepted){
+        if ((out0 == 0) && (out1 == 0)){
+            //inside view rectangle
+            //trivial accepted
+
+            accepted = true;
+        } else if (out0 && out1){
+            //outside view, in same region
+            //trivial rejected, don't draw
+            accepted = true;
+        } else {
+            let new_out = 0;
+            let x;
+            let y;
+
+            //check which lies outside
+            // t = 
+            if (out0 != 0){
+                new_out = out0;
+            } else {
+                new_out = out1;
+            }
+
+            if (new_out & TOP){
+                
+
+            } else if (new_out & BOTTOM) {
+
+
+            } else if (new_out & RIGHT) {
+
+
+            } else if (new_out & LEFT) {
+
+
+            } else if (new_out & NEAR) {
+
+
+            } else if (new_out & FAR) {
+
+
+            }
+        }
+    }
     
     return result;
 }
