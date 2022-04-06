@@ -160,7 +160,6 @@ function clipLineParallel(line) {
         if ((out0 == 0) && (out1 == 0)){
             //inside view rectangle
             //trivial accepted
-            result = line;
             accepted = true;
         } else if (out0 & out1){
             //outside view, in same region
@@ -243,11 +242,11 @@ function clipLinePerspective(line, z_min) {
         if ((out0 == 0) && (out1 == 0)){
             //inside view rectangle
             //trivial accepted
-            result = line;
             accepted = true;
         } else if (out0 & out1){
             //outside view, in same region
             //trivial rejected, don't draw
+            result = null;
             accepted = true;
         } else {
             let inter_out;
