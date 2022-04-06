@@ -147,59 +147,81 @@ function outcodePerspective(vertex, z_min) {
 
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
 function clipLineParallel(line) {
-    let result = null;
     let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
+    let result = line;
     let out0 = outcodeParallel(p0);
     let out1 = outcodeParallel(p1);
     
     // TODO: implement clipping here!
     let accepted = false;
-    let new_p0 = p0;
-    let new_p1 = p1;
 
     while (!accepted){
         if ((out0 == 0) && (out1 == 0)){
             //inside view rectangle
             //trivial accepted
-
+            result = line;
             accepted = true;
-        } else if (out0 && out1){
+        } else if (out0 & out1){
             //outside view, in same region
             //trivial rejected, don't draw
+            result = null;
             accepted = true;
         } else {
-            let new_out = 0;
+            let inter_out;
+            let delta_x = p1.x - p0.x;
+            let delta_y = p1.y - p0.y;
+            let delta_z = p1.z - p0.z;
+            let t;
             let x;
             let y;
+            let z;
 
             //check which lies outside
-            // t = 
+            // at least one should lie outside, so choose
             if (out0 != 0){
-                new_out = out0;
+                inter_out = out0;
             } else {
-                new_out = out1;
+                inter_out = out1;
+                let temp = p0;
+                p0 = p1;
+                p1 = temp;
             }
 
-            if (new_out & TOP){
-                
-
-            } else if (new_out & BOTTOM) {
-
-
-            } else if (new_out & RIGHT) {
-
-
-            } else if (new_out & LEFT) {
-
-
-            } else if (new_out & NEAR) {
-
-
-            } else if (new_out & FAR) {
-
-
+            // find t, and then find x, y, and z
+            // change so in bitwise order LRBTNF
+            if (inter_out & LEFT == LEFT) {
+                t = (-1 - p0.x)/(delta_x);
+            } else if (inter_out & RIGHT == RIGHT) {
+                t = (1 - p0.x)/(-delta_x);
+            } else if (inter_out & BOTTOM == BOTTOM) {
+                t = (-1 - p0.y)/(delta_y);
+            } else if (inter_out & TOP == TOP){
+                t = (1 - p0.y)/(delta_y);
+            } else if (inter_out & NEAR == NEAR) {
+                t = (-p0.z)/(delta_z);
+            } else if (inter_out & FAR == FAR) {
+                t = (-1 - p0.z)/(delta_z);
             }
+
+            x = ((1-t)*p0.x) + (t*p1.x);
+            y = ((1-t)*p0.y) + (t*p1.y);
+            z = ((1-t)*p0.z) + (t*p1.z);
+            let inter_p = Vector3(x, y, z);
+            p0 = inter_p;
+
+            out0 = outcodeParallel(p0);
+            out1 = outcodeParallel(p1);
+
+            result = {p0: {
+                        x: p0.x,
+                        y: p0.y,
+                        z: p0.z
+                    }, p1: {
+                        x: p1.x,
+                        y: p1.y,
+                        z: p1.z
+                    }};
         }
     }
     
@@ -208,13 +230,83 @@ function clipLineParallel(line) {
 
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
 function clipLinePerspective(line, z_min) {
-    let result = null;
     let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
+    let result = line;
     let out0 = outcodePerspective(p0, z_min);
     let out1 = outcodePerspective(p1, z_min);
     
     // TODO: implement clipping here!
+    let accepted = false;
+
+    while (!accepted){
+        if ((out0 == 0) && (out1 == 0)){
+            //inside view rectangle
+            //trivial accepted
+            result = line;
+            accepted = true;
+        } else if (out0 & out1){
+            //outside view, in same region
+            //trivial rejected, don't draw
+            accepted = true;
+        } else {
+            let inter_out;
+            let delta_x = p1.x - p0.x;
+            let delta_y = p1.y - p0.y;
+            let delta_z = p1.z - p0.z;
+            let t;
+            let x;
+            let y;
+            let z;
+
+            //check which lies outside
+            // at least one should lie outside, so choose
+            if (out0 != 0){
+                inter_out = out0;
+            } else {
+                inter_out = out1;
+                let temp = p0;
+                p0 = p1;
+                p1 = temp;
+            }
+
+            // find t, and then find x, y, and z
+            // change so in bitwise order LRBTNF
+            if (inter_out & LEFT == LEFT) {
+                t = (-p0.x + p0.z)/(delta_x - delta_z);
+            } else if (inter_out & RIGHT == RIGHT) {
+                t = (p0.x + p0.z)/(-delta_x - delta_z);
+            } else if (inter_out & BOTTOM == BOTTOM) {
+                t = (-p0.y + p0.z)/(delta_y - delta_z);
+            } else if (inter_out & TOP == TOP){
+                t = (p0.y + p0.z)/(-delta_y - delta_z);
+            } else if (inter_out & NEAR == NEAR) {
+                t = (p0.z - z_min)/(-delta_z);
+            } else if (inter_out & FAR == FAR) {
+                t = (-p0.z - 1)/(delta_z);
+            }
+
+            x = ((1-t)*p0.x) + (t*p1.x);
+            y = ((1-t)*p0.y) + (t*p1.y);
+            z = ((1-t)*p0.z) + (t*p1.z);
+            let inter_p = Vector3(x, y, z);
+            p0 = inter_p;
+
+            out0 = outcodePerspective(p0, z_min);
+            out1 = outcodePerspective(p1, z_min);
+
+            result = {p0: {
+                        x: p0.x,
+                        y: p0.y,
+                        z: p0.z
+                    }, p1: {
+                        x: p1.x,
+                        y: p1.y,
+                        z: p1.z
+                    }};
+
+        }
+    }
     
     return result;
 }
