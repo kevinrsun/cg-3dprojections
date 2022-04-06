@@ -9,7 +9,7 @@ const BOTTOM = 8;  // binary 001000
 const TOP =    4;  // binary 000100
 const FAR =    2;  // binary 000010
 const NEAR =   1;  // binary 000001
-//inside view = 0; binary 000000
+//const inside = 0;   binary 000000
 const FLOAT_EPSILON = 0.000001;
 
 // Initialization function - called when web page loads
