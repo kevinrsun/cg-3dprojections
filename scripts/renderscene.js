@@ -128,15 +128,41 @@ function drawScene() {
                         let p1 = scene.models.verticles[vert_index1];
                         //create new line + find z_min
                         let line = {p0, p1};
-                        let z_min = -(scene.view.clip[5]/scene.view.clip[4]);
+                        //multiply by model
+                        let identity = new Matrix(4,4);
+                        mat4x4Identity(identity);
+                        line = identity.mult(line);
+                        /*
+                        if (onKeyDown(event)){
+                            
+                        } else {
+                            
+                        } */
                         //multiply by N-per
-                        
+                        line = N_per.mult(line);
                         //clip line
+                        let z_min = -(scene.view.clip[5]/scene.view.clip[4]);
                         line = clipLinePerspective(line, z_min);
                         //get points from line + project 
-                        new_p0 = mat4x4MPer().mult(line.p0);
-                        new_p1 = mat4x4MPer().mult(line.p1);
-                        //
+                        let new_p0 = mat4x4MPer().mult(line.p0);
+                        let new_p1 = mat4x4MPer().mult(line.p1);
+                        //change viewport matrix
+                        let V = new Matrix(4,4);
+                        V.values = [[(view.width/2), 0, 0, (view.width/2)],
+                                    [0, (view.height/2), 0, (view.height/2)],
+                                    [0, 0, 1, 0],
+                                    [0, 0, 0, 1]];
+                        let proj_p0 = V.mult(new_p0);
+                        let proj_p1 = V.mult(new_p1);
+                        //convert to cartesian
+                        let twoD_p0 = {x: proj_p0.x/proj_p0.w,
+                                        y: proj_p0.y/proj_p0.w,
+                                        z: proj_p0.z/proj_p0.w,};
+                        let twoD_p1 = {x: proj_p0.x/proj_p0.w,
+                                       y: proj_p0.y/proj_p0.w,
+                                       z: proj_p0.z/proj_p0.w,};
+                        //draw the dang line
+                        drawLine(twoD_p0.x, twoD_p0.y, twoD_p1.x, twoD_p1.y);
                     }
                 }
             } else if (scene.models.type == 'cube'){
@@ -379,8 +405,8 @@ function clipLinePerspective(line, z_min) {
 
 // Called when user presses a key on the keyboard down 
 function onKeyDown(event) {
-    //recaclulate axises u, v, n
-    //a = prp - 0, 0, 0
+    //recaclulate axes u, v, n
+    //a = prp - 0, 0, 0 
     //prp + u axis => left + right
     //prp + n axis => forward + back
     
