@@ -26,16 +26,32 @@ function init() {
     scene = {
         view: {
             type: 'perspective',
+            prp: Vector3(10, 9, 0),
+            srp: Vector3(10, 9, -30),
+            vup: Vector3(0, 1, 0),
+            clip: [-11, 11, -11, 11, 30, 100]
+            /*
             prp: Vector3(44, 20, -16),
             srp: Vector3(20, 20, -40),
             vup: Vector3(0, 1, 0),
-            clip: [-19, 5, -10, 8, 12, 100]
+            clip: [-19, 5, -10, 8, 12, 100] */
             //use example in class to check if correct
         },
         models: [
             {
                 type: 'generic',
                 vertices: [
+                    Vector4(0, 0, -30, 1),
+                    Vector4(20, 0, -30, 1),
+                    Vector4(20, 12, -30, 1),
+                    Vector4(10, 20, -30, 1),
+                    Vector4(0, 12, -30, 1),
+                    Vector4(0, 0, -60, 1),
+                    Vector4(20, 0, -60, 1),
+                    Vector4(20, 12, -60, 1),
+                    Vector4(10, 20, -60, 1),
+                    Vector4(0, 12, -60, 1)
+                    /*
                     Vector4( 0,  0, -30, 1),
                     Vector4(20,  0, -30, 1),
                     Vector4(20, 12, -30, 1),
@@ -45,7 +61,7 @@ function init() {
                     Vector4(20,  0, -60, 1),
                     Vector4(20, 12, -60, 1),
                     Vector4(10, 20, -60, 1),
-                    Vector4( 0, 12, -60, 1)
+                    Vector4( 0, 12, -60, 1) */
                 ],
                 edges: [
                     [0, 1, 2, 3, 4, 0],
@@ -66,7 +82,7 @@ function init() {
     
     // start animation loop
     start_time = performance.now(); // current timestamp in milliseconds
-    window.requestAnimationFrame(animate);
+    //window.requestAnimationFrame(animate);
 }
 
 // Animation loop - repeatedly calls rendering code
@@ -91,6 +107,57 @@ function drawScene() {
     
     // TODO: implement drawing here!
     // For each model, for each edge
+
+    //check which scene view type
+    if (scene.view.type == 'perspective'){
+        //look through the list of models under 'perspective'
+        //create N_per for transforms
+        let N_per = mat4x4Perspective(scene.view.prp, scene.view.srp,
+            scene.view.vup, scene.view.clip);
+        for (let i = 0; i < scene.models.length; i++){
+            //check the model type
+            if (scene.models.type == 'generic'){
+                for (j = 0; j < scene.models.edges.length; j++){
+                    //clip + draw lines
+                    for (k = 0; k < scene.models.edges[j].length-1; k++){
+                        //find indices
+                        let vert_index0 = scene.models.edges[j][k];
+                        let vert_index1 = scene.models.edges[j][k+1];
+                        //find vertices from indices
+                        let p0 = scene.models.vertices[vert_index0];
+                        let p1 = scene.models.verticles[vert_index1];
+                        //create new line + find z_min
+                        let line = {p0, p1};
+                        let z_min = -(scene.view.clip[5]/scene.view.clip[4]);
+                        //multiply by N-per
+                        
+                        //clip line
+                        line = clipLinePerspective(line, z_min);
+                        //get points from line + project 
+                        new_p0 = mat4x4MPer().mult(line.p0);
+                        new_p1 = mat4x4MPer().mult(line.p1);
+                        //
+                    }
+                }
+            } else if (scene.models.type == 'cube'){
+
+            } else if (scene.models.type == 'cone'){
+
+            } else if (scene.models.type == 'cylinder') {
+
+            } else {
+                //sphere
+
+            }
+        }
+    }
+
+    if (scene.view.type == 'parallel'){
+        for (let i = 0; i < scene.models.length; i++){
+            
+        }
+    }
+
     //  * transform to canonical view volume
     //  * clip in 3D
     //  * project to 2D
@@ -312,6 +379,11 @@ function clipLinePerspective(line, z_min) {
 
 // Called when user presses a key on the keyboard down 
 function onKeyDown(event) {
+    //recaclulate axises u, v, n
+    //a = prp - 0, 0, 0
+    //prp + u axis => left + right
+    //prp + n axis => forward + back
+    
     switch (event.keyCode) {
         case 37: // LEFT Arrow
             console.log("left");
