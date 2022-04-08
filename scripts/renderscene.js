@@ -125,7 +125,7 @@ function drawScene() {
                         let vert_index1 = scene.models.edges[j][k+1];
                         //find vertices from indices
                         let p0 = scene.models.vertices[vert_index0];
-                        let p1 = scene.models.verticles[vert_index1];
+                        let p1 = scene.models.vertices[vert_index1];
                         //create new line + find z_min
                         let line = {p0, p1};
                         //multiply by model
@@ -161,7 +161,7 @@ function drawScene() {
                         let twoD_p1 = {x: proj_p0.x/proj_p0.w,
                                        y: proj_p0.y/proj_p0.w,
                                        z: proj_p0.z/proj_p0.w,};
-                        //draw the dang line
+                        //draw the line
                         drawLine(twoD_p0.x, twoD_p0.y, twoD_p1.x, twoD_p1.y);
                     }
                 }
