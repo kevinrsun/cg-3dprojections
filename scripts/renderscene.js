@@ -75,6 +75,13 @@ function init() {
                     [4, 9]
                 ],
                 matrix: new Matrix(4, 4)
+            }, 
+            {
+                type: 'cube',
+                center: [4, 4, -10],
+                width: 8,
+                height: 8,
+                depth: 8
             }
         ]
     };
@@ -94,13 +101,17 @@ function animate(timestamp) {
     
     // step 2: transform models based on time
     // TODO: implement this!
+    let rotate_x = new Matrix(4,4);
+
+    mat4x4RotateX(rotate_x, time+1);
+
 
     // step 3: draw scene
     drawScene();
 
     // step 4: request next animation frame (recursively calling same function)
     // (may want to leave commented out while debugging initially)
-    // window.requestAnimationFrame(animate);
+    //window.requestAnimationFrame(animate);
 }
 
 // Main drawing code - use information contained in variable `scene`
@@ -150,7 +161,7 @@ function drawScene() {
                         //console.log(line);
 
                         //clip line
-                        let z_min = ((-scene.view.clip[5])/scene.view.clip[4]);
+                        let z_min = ((-scene.view.clip[4])/scene.view.clip[5]);
                         line = clipLinePerspective(line, z_min);
                         console.log(line);
 
@@ -186,10 +197,38 @@ function drawScene() {
                     }
                 }
             } else if (scene.models.type == 'cube'){
+                let cube_x = scene.models.center[0];
+                let cube_y = scene.models.center[1];
+                let cube_z = scene.models.center[2];
+                let cube = {};
+                //calculate edges and vertices from center, width, height, and depth
+                // left bottom front = center + 1/2 depth - 1/2 width - 1/2 height
+                // right bottom front = center + 1/2 depth + 1/2 width - 1/2 height
+                // left top front = center + 1/2 depth - 1/2 width + 1/2 height
+                // right top front = center + 1/2 depth + 1/2 width + 1/2 height
 
-            } else if (scene.models.type == 'cone'){
+                // left bottom back = center - 1/2 depth - 1/2 width - 1/2 height
+                // right bottom back = center - 1/2 depth + 1/2 width - 1/2 height
+                // left top back = center - 1/2 depth - 1/2 width + 1/2 height
+                // right top back = center - 1/2 depth + 1/2 width + 1/2 height
+                let l_b_f = new Vector4(scene.models.center[0] - (scene.models.width/2),
+                                        scene.models.center[1] + (scene.models.depth/2),
+                                        scene.models.center[2] - (scene.models.height/2));
+                let r_b_f = new Vector4(scene.models.center[0] - (scene.models.width/2),
+                                        scene.models.center[1] + (scene.models.depth/2),
+                                        scene.models.center[2] - (scene.models.height/2));
+                let l_t_f = new Vector4(scene.models.center[0] - (scene.models.width/2),
+                                        scene.models.center[1] + (scene.models.depth/2),
+                                        scene.models.center[2] + (scene.models.height/2));
+                let r_t_f = new Vector4(scene.models.center[0] + (scene.models.width/2),
+                                        scene.models.center[1] + (scene.models.depth/2),
+                                        scene.models.center[2] + (scene.models.height/2));
 
-            } else if (scene.models.type == 'cylinder') {
+
+
+            } else if (scene.models.type == 'cylinder'){
+
+            } else if (scene.models.type == 'cone') {
 
             } else {
                 //sphere
@@ -237,7 +276,7 @@ function drawScene() {
                         //console.log(line);
 
                         //clip line
-                        line = clipLineParallel(line);
+                        //line = clipLineParallel(line);
                         console.log(line);
 
                         //get points from line + project 
@@ -272,7 +311,7 @@ function drawScene() {
                     }
                 }
             } else if (scene.models.type == 'cube'){
-
+                
             } else if (scene.models.type == 'cone'){
 
             } else if (scene.models.type == 'cylinder') {
@@ -340,30 +379,41 @@ function outcodePerspective(vertex, z_min) {
 
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
 function clipLineParallel(line) {
+    let result = {pt0: {
+                        x: line.pt0.x,
+                        y: line.pt0.y,
+                        z: line.pt0.z
+                    }, pt1: {
+                        x: line.pt1.x,
+                        y: line.pt1.y,
+                        z: line.pt1.z
+                    }
+                };
     let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
-    let result = line;
     let out0 = outcodeParallel(p0);
     let out1 = outcodeParallel(p1);
-    
+    console.log(p0, p1, out0, out1);
+    console.log(result);
+
     // TODO: implement clipping here!
     let accepted = false;
 
     while (!accepted){
-        if ((out0 == 0) && (out1 == 0)){
+        if ((out0 | out1) == 0){
             //inside view rectangle
             //trivial accepted
+            console.log("accepted");
             accepted = true;
-        } else if (out0 & out1){
+        } else if ((out0 & out1) != 0) {
             //outside view, in same region
             //trivial rejected, don't draw
-            result = null;
             accepted = true;
+            console.log("rejected");
+            result = null;
         } else {
+            console.log("clip time");
             let inter_out;
-            let delta_x = p1.x - p0.x;
-            let delta_y = p1.y - p0.y;
-            let delta_z = p1.z - p0.z;
             let t;
             let x;
             let y;
@@ -380,92 +430,106 @@ function clipLineParallel(line) {
                 p1 = temp;
             }
 
+            let delta_x = p1.x - p0.x;
+            let delta_y = p1.y - p0.y;
+            let delta_z = p1.z - p0.z;
+
             // find t, and then find x, y, and z
             // change so in bitwise order LRBTNF
+
             if (inter_out & LEFT == LEFT) {
+
                 t = (-1 - p0.x)/(delta_x);
+
             } else if (inter_out & RIGHT == RIGHT) {
+
                 t = (1 - p0.x)/(-delta_x);
+
             } else if (inter_out & BOTTOM == BOTTOM) {
+
                 t = (-1 - p0.y)/(delta_y);
+
             } else if (inter_out & TOP == TOP){
+
                 t = (1 - p0.y)/(delta_y);
+
             } else if (inter_out & NEAR == NEAR) {
+
                 t = (-p0.z)/(delta_z);
+
             } else if (inter_out & FAR == FAR) {
+
                 t = (-1 - p0.z)/(delta_z);
             }
 
             x = ((1-t)*p0.x) + (t*p1.x);
+
             y = ((1-t)*p0.y) + (t*p1.y);
+
             z = ((1-t)*p0.z) + (t*p1.z);
+
             let inter_p = Vector3(x, y, z);
             p0 = inter_p;
+
+            result = {pt0: {
+                            x: p0.x,
+                            y: p0.y,
+                            z: p0.z
+                            }, 
+                      pt1: {
+                            x: p1.x,
+                            y: p1.y,
+                            z: p1.z
+                            }
+                    };
+            //console.log(result);
 
             out0 = outcodeParallel(p0);
             //console.log(out0);
             out1 = outcodeParallel(p1);
             //console.log(out1);
 
-            result = {p0: {
-                        x: p0.x,
-                        y: p0.y,
-                        z: p0.z
-                    }, p1: {
-                        x: p1.x,
-                        y: p1.y,
-                        z: p1.z
-                    }};
-            
-            //console.log(result);
-
         }
     }
-    
     return result;
 }
 
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
 function clipLinePerspective(line, z_min) {
-    //console.log(line);
-    let p0 = Vector4(line.pt0.x, line.pt0.y, line.pt0.z, line.pt0.w); 
-    let p1 = Vector4(line.pt1.x, line.pt1.y, line.pt1.z, line.pt1.w);
     let result = {pt0: {
-                        x: p0.x,
-                        y: p0.y,
-                        z: p0.z,
-                        w: p0.w
-                        }, 
-                  pt1: {
-                        x: p1.x,
-                        y: p1.y,
-                        z: p1.z,
-                        w: p1.w
-                        }
-                };
-    //console.log(result);
+                    x: line.pt0.x,
+                    y: line.pt0.y,
+                    z: line.pt0.z
+                }, pt1: {
+                    x: line.pt1.x,
+                    y: line.pt1.y,
+                    z: line.pt1.z
+                }
+            };
+    let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
+    let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
     let out0 = outcodePerspective(p0, z_min);
     let out1 = outcodePerspective(p1, z_min);
+    console.log(p0, p1, out0, out1);
+    console.log(result);
     
     // TODO: implement clipping here!
     let accepted = false;
-    let count = 0;
 
     while (!accepted){
-        count = count + 1;
         if ((out0 | out1) == 0){
             //inside view rectangle
             //trivial accepted
-            console.log("accepted, round" + count);
+            console.log("accepted");
             accepted = true;
         } else if ((out0 & out1) != 0) {
             //outside view, in same region
             //trivial rejected, don't draw
             accepted = true;
-            console.log("rejected, round" + count);
+            console.log("rejected");
             result = null;
         } else {
-            console.log("clip time babie, round" + count);
+            console.log("clip time");
             let inter_out;
             let t;
             let x;
@@ -521,18 +585,14 @@ function clipLinePerspective(line, z_min) {
             let inter_p = Vector4(x, y, z, 1);
             p0 = inter_p;
 
-
-
             result = {pt0: {
                         x: p0.x,
                         y: p0.y,
-                        z: p0.z,
-                        w: p0.w
+                        z: p0.z
                     }, pt1: {
                         x: p1.x,
                         y: p1.y,
-                        z: p1.z,
-                        w: p1.w
+                        z: p1.z
                     }};
             console.log(result);
 
