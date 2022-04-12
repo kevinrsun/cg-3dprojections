@@ -190,9 +190,9 @@ function drawScene() {
                                                placeholder_line.pt0.y,
                                                placeholder_line.pt0.z,
                                                1);
-                        line.pt1 = new Vector4(placeholder_line.pt0.x,
-                                               placeholder_line.pt0.y,
-                                               placeholder_line.pt0.z,
+                        line.pt1 = new Vector4(placeholder_line.pt1.x,
+                                               placeholder_line.pt1.y,
+                                               placeholder_line.pt1.z,
                                                1);
                         console.log(line); 
                         
@@ -200,7 +200,7 @@ function drawScene() {
                             //m_per
                             line.pt0 = Matrix.multiply([M_per, line.pt0]);
                             line.pt1 = Matrix.multiply([M_per, line.pt1]);
-                            console.log(line.pt0);
+                            console.log(line);
                             
                             //change viewport matrix
                             let V = new Matrix(4,4);
@@ -210,6 +210,7 @@ function drawScene() {
                                         [0, 0, 0, 1]];
                             line.pt0 = Matrix.multiply([V, line.pt0]);
                             line.pt1 = Matrix.multiply([V, line.pt1]);
+                            console.log(line)
 
                             //convert to cartesian
                             let twoD_p0 = {x: line.pt0.x/line.pt0.w,
