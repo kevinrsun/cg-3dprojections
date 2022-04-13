@@ -26,23 +26,23 @@ function init() {
     scene = {
         /*
         view: {
-            type: "parallel",
-            prp: [0, 0, 10],
-            srp: [0, 0, 0],
-            vup: [0, 1, 0],
+            type: "perspective",
+            prp: Vector3(0, 0, 10),
+            srp: Vector3(0, 0, 0),
+            vup: Vector3(0, 1, 0),
             clip: [-4, 20, -1, 17, 5, 75]
         },
         models: [
             {
                 type: "cube",
-                center: [4, 4, -10],
+                center: Vector3(4, 4, -10),
                 width: 8,
                 height: 8,
                 depth: 8
             },
             {
                 type: "cylinder",
-                center: [12, 10, -49],
+                center: Vector3(12, 10, -49),
                 radius: 1.5,
                 height: 5,
                 sides: 12,
@@ -107,7 +107,7 @@ function init() {
             }, 
             {
                 type: 'cube',
-                center: [4, 4, -10],
+                center: Vector3(4, 4, -10),
                 width: 8,
                 height: 8,
                 depth: 8
@@ -146,9 +146,14 @@ function animate(timestamp) {
 // Main drawing code - use information contained in variable `scene`
 function drawScene() {
     console.log(scene);
+    ctx.clearRect(0, 0 , view.width, view.height);
 
     // TODO: implement drawing here!
     // For each model, for each edge
+    //  * transform to canonical view volume
+    //  * clip in 3D
+    //  * project to 2D
+    //  * draw line
 
     //check which scene view type
     if (scene.view.type == 'perspective'){
@@ -160,16 +165,30 @@ function drawScene() {
         M_per = mat4x4MPer();
         for (let i = 0; i < scene.models.length; i++){
             //check the model type
+            let model;
             if (scene.models[i].type == 'generic'){
-                for (j = 0; j < scene.models[i].edges.length; j++){
+                model = scene.models[i];
+            } else if (scene.models[i].type == 'cube'){
+                model = createCube(scene.models[i].center, scene.models[i].width,
+                    scene.models[i].height, scene.models[i].depth);
+            } else if (scene.models[i].type == 'cylinder'){
+                model = createCylinder(scene.models[i].center, scene.models[i].radius,
+                    scene.models[i].height, scene.models[i].sides);
+            } else if (scene.models[i].type == 'cone'){
+                model = createCone(scene.models[i].center, scene.models[i].radius,
+                    scene.models[i].height, scene.models[i].sides);
+            } else {
+                model = createSphere();
+            }
+                for (j = 0; j < model.edges.length; j++){
                     //clip + draw lines
-                    for (k = 0; k < scene.models[i].edges[j].length-1; k++){
+                    for (k = 0; k < model.edges[j].length-1; k++){
                         //find indices
-                        let index0 = scene.models[i].edges[j][k];
-                        let index1 = scene.models[i].edges[j][k+1];
+                        let index0 = model.edges[j][k];
+                        let index1 = model.edges[j][k+1];
 
-                        let p0 = scene.models[i].vertices[index0];
-                        let p1 = scene.models[i].vertices[index1];
+                        let p0 = model.vertices[index0];
+                        let p1 = model.vertices[index1];
 
                         let line = {pt0: p0, pt1: p1};
                         
@@ -186,17 +205,18 @@ function drawScene() {
                         let z_min = ((-scene.view.clip[4])/scene.view.clip[5]);
                         
                         let placeholder_line = clipLinePerspective(line, z_min);
-                        line.pt0 = new Vector4(placeholder_line.pt0.x,
-                                               placeholder_line.pt0.y,
-                                               placeholder_line.pt0.z,
-                                               1);
-                        line.pt1 = new Vector4(placeholder_line.pt1.x,
-                                               placeholder_line.pt1.y,
-                                               placeholder_line.pt1.z,
-                                               1);
-                        console.log(line); 
                         
-                        if (line != null){
+                        if (placeholder_line != null){
+                            line.pt0 = new Vector4(placeholder_line.pt0.x,
+                                                    placeholder_line.pt0.y,
+                                                    placeholder_line.pt0.z,
+                                                    1);
+                            line.pt1 = new Vector4(placeholder_line.pt1.x,
+                                                    placeholder_line.pt1.y,
+                                                    placeholder_line.pt1.z,
+                                                    1);
+                            console.log(line); 
+
                             //m_per
                             line.pt0 = Matrix.multiply([M_per, line.pt0]);
                             line.pt1 = Matrix.multiply([M_per, line.pt1]);
@@ -226,133 +246,7 @@ function drawScene() {
                         }
                     }
                 }
-            } else if (scene.models.type == 'cube'){
-                //center x, y, z values
-                let cube_x = scene.models.center[0];
-                let cube_y = scene.models.center[1];
-                let cube_z = scene.models.center[2];
-
-                let lbf; //left, bottom, front
-                let rbf; //right, bottom, front
-                let ltf; //left, top, front
-                let rtf; //right, top, front
-                let lbb; //left, bottom, back
-                let rbb; //right, bottom, back
-                let ltb; //left, top, back
-                let rtb; //right, top, back
-
-                let cube = {
-                    vertices: [
-                    //calculate edges and vertices from center, width, height, and depth
-                    // left bottom front = center + 1/2 depth - 1/2 width - 1/2 height
-                    // right bottom front = center + 1/2 depth + 1/2 width - 1/2 height
-                    // left top front = center + 1/2 depth - 1/2 width + 1/2 height
-                    // right top front = center + 1/2 depth + 1/2 width + 1/2 height
-
-                    // left bottom back = center - 1/2 depth - 1/2 width - 1/2 height
-                    // right bottom back = center - 1/2 depth + 1/2 width - 1/2 height
-                    // left top back = center - 1/2 depth - 1/2 width + 1/2 height
-                    // right top back = center - 1/2 depth + 1/2 width + 1/2 height
-                        //front
-                         //left
-                        lbf = new Vector4(cube_x - (width/2), cube_y - (height/2), cube_z + (depth/2), 1),
-                        ltf = new Vector4(cube_x - (width/2), cube_y + (height/2), cube_z + (depth/2), 1),
-                         // right
-                        rbf = new Vector4(cube_x + (width/2), cube_y - (height/2), cube_z + (depth/2), 1),
-                        rtf = new Vector4(cube_x + (width/2), cube_y + (height/2), cube_z + (depth/2), 1),
-                        //back
-                         //left
-                        lbb = new Vector4(cube_x - (width/2), cube_y - (height/2), cube_z - (depth/2), 1),
-                        ltb = new Vector4(cube_x - (width/2), cube_y + (height/2), cube_z - (depth/2), 1),
-                         //right
-                        rbb = new Vector4(cube_x + (width/2), cube_y - (height/2), cube_z - (depth/2), 1),
-                        rtb = new Vector4(cube_x + (width/2), cube_y + (height/2), cube_z - (depth/2), 1)
-                    ],
-                    edges: [
-                        [0, 1, 2, 3, 0],
-                        [4, 5, 6, 7, 4],
-                        [0, 4],
-                        [1, 5],
-                        [2, 6],
-                        [3, 7]
-                    ]
-
-                };
-
-                for (j = 0; j < scene.models[i].edges.length; j++){
-                    //clip + draw lines
-                    for (k = 0; k < scene.models[i].edges[j].length-1; k++){
-                        //find indices
-                        let index0 = scene.models[i].edges[j][k];
-                        let index1 = scene.models[i].edges[j][k+1];
-
-                        let p0 = scene.models[i].vertices[index0];
-                        let p1 = scene.models[i].vertices[index1];
-
-                        let line = {pt0: p0, pt1: p1};
-                        
-                        //console.log(line);
-                        /*
-                        let identity = new Matrix(4,4);
-                        mat4x4Identity(identity);
-                        line.pt0 = Matrix.multiply([identity, line.pt0]);
-                        line.pt1 = Matrix.multiply([identity, line.pt1]); */
-
-                        line.pt0 = Matrix.multiply([N_per, line.pt0]);
-                        line.pt1 = Matrix.multiply([N_per, line.pt1]);
-
-                        let z_min = ((-scene.view.clip[4])/scene.view.clip[5]);
-                        
-                        let placeholder_line = clipLinePerspective(line, z_min);
-                        line.pt0 = new Vector4(placeholder_line.pt0.x,
-                                               placeholder_line.pt0.y,
-                                               placeholder_line.pt0.z,
-                                               1);
-                        line.pt1 = new Vector4(placeholder_line.pt0.x,
-                                               placeholder_line.pt0.y,
-                                               placeholder_line.pt0.z,
-                                               1);
-                        console.log(line); 
-                        
-                        if (line != null){
-                            //m_per
-                            line.pt0 = Matrix.multiply([M_per, line.pt0]);
-                            line.pt1 = Matrix.multiply([M_per, line.pt1]);
-                            console.log(line.pt0);
-                            
-                            //change viewport matrix
-                            let V = new Matrix(4,4);
-                            V.values = [[(view.width/2), 0, 0, (view.width/2)],
-                                        [0, (view.height/2), 0, (view.height/2)],
-                                        [0, 0, 1, 0],
-                                        [0, 0, 0, 1]];
-                            line.pt0 = Matrix.multiply([V, line.pt0]);
-                            line.pt1 = Matrix.multiply([V, line.pt1]);
-
-                            //convert to cartesian
-                            let twoD_p0 = {x: line.pt0.x/line.pt0.w,
-                                           y: line.pt0.y/line.pt0.w,
-                                           z: line.pt0.z/line.pt0.w};
-                            let twoD_p1 = {x: line.pt1.x/line.pt1.w,
-                                           y: line.pt1.y/line.pt1.w,
-                                           z: line.pt1.z/line.pt1.w};
-
-                            // draw line 
-                            drawLine(twoD_p0.x, twoD_p0.y, twoD_p1.x, twoD_p1.y); 
-                            console.log(line)
-                        }
-                    }
-                }
-            } else if (scene.models.type == 'cylinder'){
-
-            } else if (scene.models.type == 'cone') {
-
-            } else {
-                //sphere
-
-            }
         }
-    
     } else {
         //look through the list of models under 'parallel'
         //create N_per for transforms
@@ -362,210 +256,194 @@ function drawScene() {
         M_par = mat4x4MPar();
         for (let i = 0; i < scene.models.length; i++){
             //check the model type
+            let model;
             if (scene.models[i].type == 'generic'){
-                for (j = 0; j < scene.models[i].edges.length; j++){
-                    //clip + draw lines
-                    for (k = 0; k < scene.models[i].edges[j].length-1; k++){
-                        //find indices
-                        let index0 = scene.models[i].edges[j][k];
-                        let index1 = scene.models[i].edges[j][k+1];
-
-                        let p0 = scene.models[i].vertices[index0];
-                        let p1 = scene.models[i].vertices[index1];
-
-                        let line = {pt0: p0, pt1: p1};
-                        
-                        //console.log(line);
-                        /*
-                        let identity = new Matrix(4,4);
-                        mat4x4Identity(identity);
-                        line.pt0 = Matrix.multiply([identity, line.pt0]);
-                        line.pt1 = Matrix.multiply([identity, line.pt1]); */
-
-                        line.pt0 = Matrix.multiply([N_par, line.pt0]);
-                        line.pt1 = Matrix.multiply([N_par, line.pt1]);
-
-                        let z_min = ((-scene.view.clip[4])/scene.view.clip[5]);
-                        
-                        let placeholder_line = clipLineParallel(line);
-                        line.pt0 = new Vector4(placeholder_line.pt0.x,
-                                               placeholder_line.pt0.y,
-                                               placeholder_line.pt0.z,
-                                               1);
-                        line.pt1 = new Vector4(placeholder_line.pt0.x,
-                                               placeholder_line.pt0.y,
-                                               placeholder_line.pt0.z,
-                                               1);
-                        console.log(line); 
-                        
-                        if (line != null){
-                            //m_per
-                            line.pt0 = Matrix.multiply([M_par, line.pt0]);
-                            line.pt1 = Matrix.multiply([M_par, line.pt1]);
-                            console.log(line.pt0);
-                            
-                            //change viewport matrix
-                            let V = new Matrix(4,4);
-                            V.values = [[(view.width/2), 0, 0, (view.width/2)],
-                                        [0, (view.height/2), 0, (view.height/2)],
-                                        [0, 0, 1, 0],
-                                        [0, 0, 0, 1]];
-                            line.pt0 = Matrix.multiply([V, line.pt0]);
-                            line.pt1 = Matrix.multiply([V, line.pt1]);
-
-                            //convert to cartesian
-                            let twoD_p0 = {x: line.pt0.x/line.pt0.w,
-                                           y: line.pt0.y/line.pt0.w,
-                                           z: line.pt0.z/line.pt0.w};
-                            console.log(twoD_p0);
-                            let twoD_p1 = {x: line.pt1.x/line.pt1.w,
-                                           y: line.pt1.y/line.pt1.w,
-                                           z: line.pt1.z/line.pt1.w};
-
-                            console.log(twoD_p1);
-
-                            // draw line 
-                            drawLine(twoD_p0.x, twoD_p0.y, twoD_p1.x, twoD_p1.y); 
-                        }
-                    }
-                }
-            } else if (scene.models.type == 'cube'){
-                //center x, y, z values
-                let cube_x = scene.models.center[0];
-                let cube_y = scene.models.center[1];
-                let cube_z = scene.models.center[2];
-
-                let lbf; //left, bottom, front
-                let rbf; //right, bottom, front
-                let ltf; //left, top, front
-                let rtf; //right, top, front
-                let lbb; //left, bottom, back
-                let rbb; //right, bottom, back
-                let ltb; //left, top, back
-                let rtb; //right, top, back
-
-                let cube = {
-                    vertices: [
-                    //calculate edges and vertices from center, width, height, and depth
-                    // left bottom front = center + 1/2 depth - 1/2 width - 1/2 height
-                    // right bottom front = center + 1/2 depth + 1/2 width - 1/2 height
-                    // left top front = center + 1/2 depth - 1/2 width + 1/2 height
-                    // right top front = center + 1/2 depth + 1/2 width + 1/2 height
-
-                    // left bottom back = center - 1/2 depth - 1/2 width - 1/2 height
-                    // right bottom back = center - 1/2 depth + 1/2 width - 1/2 height
-                    // left top back = center - 1/2 depth - 1/2 width + 1/2 height
-                    // right top back = center - 1/2 depth + 1/2 width + 1/2 height
-                        //front
-                         //left
-                        lbf = new Vector4(cube_x - (width/2), cube_y - (height/2), cube_z + (depth/2), 1),
-                        ltf = new Vector4(cube_x - (width/2), cube_y + (height/2), cube_z + (depth/2), 1),
-                         // right
-                        rbf = new Vector4(cube_x + (width/2), cube_y - (height/2), cube_z + (depth/2), 1),
-                        rtf = new Vector4(cube_x + (width/2), cube_y + (height/2), cube_z + (depth/2), 1),
-                        //back
-                         //left
-                        lbb = new Vector4(cube_x - (width/2), cube_y - (height/2), cube_z - (depth/2), 1),
-                        ltb = new Vector4(cube_x - (width/2), cube_y + (height/2), cube_z - (depth/2), 1),
-                         //right
-                        rbb = new Vector4(cube_x + (width/2), cube_y - (height/2), cube_z - (depth/2), 1),
-                        rtb = new Vector4(cube_x + (width/2), cube_y + (height/2), cube_z - (depth/2), 1)
-                    ],
-                    edges: [
-                        [0, 1, 2, 3, 0],
-                        [4, 5, 6, 7, 4],
-                        [0, 4],
-                        [1, 5],
-                        [2, 6],
-                        [3, 7]
-                    ]
-
-                };
-
-                for (j = 0; j < scene.models[i].edges.length; j++){
-                    //clip + draw lines
-                    for (k = 0; k < scene.models[i].edges[j].length-1; k++){
-                        //find indices
-                        let index0 = scene.models[i].edges[j][k];
-                        let index1 = scene.models[i].edges[j][k+1];
-
-                        let p0 = scene.models[i].vertices[index0];
-                        let p1 = scene.models[i].vertices[index1];
-
-                        let line = {pt0: p0, pt1: p1};
-                        
-                        //console.log(line);
-                        /*
-                        let identity = new Matrix(4,4);
-                        mat4x4Identity(identity);
-                        line.pt0 = Matrix.multiply([identity, line.pt0]);
-                        line.pt1 = Matrix.multiply([identity, line.pt1]); */
-
-                        line.pt0 = Matrix.multiply([N_par, line.pt0]);
-                        line.pt1 = Matrix.multiply([N_par, line.pt1]);
-
-                        let z_min = ((-scene.view.clip[4])/scene.view.clip[5]);
-                        
-                        let placeholder_line = clipLineParallel(line);
-                        line.pt0 = new Vector4(placeholder_line.pt0.x,
-                                               placeholder_line.pt0.y,
-                                               placeholder_line.pt0.z,
-                                               1);
-                        line.pt1 = new Vector4(placeholder_line.pt0.x,
-                                               placeholder_line.pt0.y,
-                                               placeholder_line.pt0.z,
-                                               1);
-                        console.log(line); 
-                        
-                        if (line != null){
-                            //m_per
-                            line.pt0 = Matrix.multiply([M_par, line.pt0]);
-                            line.pt1 = Matrix.multiply([M_par, line.pt1]);
-                            console.log(line.pt0);
-                            
-                            //change viewport matrix
-                            let V = new Matrix(4,4);
-                            V.values = [[(view.width/2), 0, 0, (view.width/2)],
-                                        [0, (view.height/2), 0, (view.height/2)],
-                                        [0, 0, 1, 0],
-                                        [0, 0, 0, 1]];
-                            line.pt0 = Matrix.multiply([V, line.pt0]);
-                            line.pt1 = Matrix.multiply([V, line.pt1]);
-
-                            //convert to cartesian
-                            let twoD_p0 = {x: line.pt0.x/line.pt0.w,
-                                           y: line.pt0.y/line.pt0.w,
-                                           z: line.pt0.z/line.pt0.w};
-                            console.log(twoD_p0);
-                            let twoD_p1 = {x: line.pt1.x/line.pt1.w,
-                                           y: line.pt1.y/line.pt1.w,
-                                           z: line.pt1.z/line.pt1.w};
-
-                            console.log(twoD_p1);
-
-                            // draw line 
-                            drawLine(twoD_p0.x, twoD_p0.y, twoD_p1.x, twoD_p1.y); 
-                        }
-                    }
-                }
-
-            } else if (scene.models.type == 'cylinder'){
-
-            } else if (scene.models.type == 'cone') {
-
+                model = scene.models[i];
+            } else if (scene.models[i].type == 'cube'){
+                model = createCube(scene.models[i].center, scene.models[i].width,
+                    scene.models[i].height, scene.models[i].depth);
+            } else if (scene.models[i].type == 'cylinder'){
+                model = createCylinder(scene.models[i].center, scene.models[i].radius,
+                    scene.models[i].height, scene.models[i].sides);
+            } else if (scene.models[i].type == 'cone'){
+                model = createCone(scene.models[i].center, scene.models[i].radius,
+                    scene.models[i].height, scene.models[i].sides);
             } else {
-                //sphere
-
+                //sphere, probably wont implement in time :(
+                model = createSphere();
             }
+                for (j = 0; j < model.edges.length; j++){
+                    //clip + draw lines
+                    for (k = 0; k < model.edges[j].length-1; k++){
+                        //find indices
+                        let index0 = model.edges[j][k];
+                        let index1 = model.edges[j][k+1];
+
+                        let p0 = model.vertices[index0];
+                        let p1 = model.vertices[index1];
+
+                        let line = {pt0: p0, pt1: p1};
+                        
+                        //console.log(line);
+                        /*
+                        let identity = new Matrix(4,4);
+                        mat4x4Identity(identity);
+                        line.pt0 = Matrix.multiply([identity, line.pt0]);
+                        line.pt1 = Matrix.multiply([identity, line.pt1]); */
+
+                        line.pt0 = Matrix.multiply([N_par, line.pt0]);
+                        line.pt1 = Matrix.multiply([N_par, line.pt1]);
+                        
+                        let placeholder_line = clipLineParallel(line);
+                        
+                        if (placeholder_line != null){
+                            line.pt0 = new Vector4(placeholder_line.pt0.x,
+                                                    placeholder_line.pt0.y,
+                                                    placeholder_line.pt0.z,
+                                                    1);
+                            line.pt1 = new Vector4(placeholder_line.pt1.x,
+                                                    placeholder_line.pt1.y,
+                                                    placeholder_line.pt1.z,
+                                                    1);
+                            console.log(line); 
+
+                            //m_per
+                            line.pt0 = Matrix.multiply([M_par, line.pt0]);
+                            line.pt1 = Matrix.multiply([M_par, line.pt1]);
+                            console.log(line.pt0);
+                            
+                            //change viewport matrix
+                            let V = new Matrix(4,4);
+                            V.values = [[(view.width/2), 0, 0, (view.width/2)],
+                                        [0, (view.height/2), 0, (view.height/2)],
+                                        [0, 0, 1, 0],
+                                        [0, 0, 0, 1]];
+                            line.pt0 = Matrix.multiply([V, line.pt0]);
+                            line.pt1 = Matrix.multiply([V, line.pt1]);
+
+                            //convert to cartesian
+                            let twoD_p0 = {x: line.pt0.x/line.pt0.w,
+                                           y: line.pt0.y/line.pt0.w,
+                                           z: line.pt0.z/line.pt0.w};
+                            console.log(twoD_p0);
+                            let twoD_p1 = {x: line.pt1.x/line.pt1.w,
+                                           y: line.pt1.y/line.pt1.w,
+                                           z: line.pt1.z/line.pt1.w};
+
+                            console.log(twoD_p1);
+
+                            // draw line 
+                            drawLine(twoD_p0.x, twoD_p0.y, twoD_p1.x, twoD_p1.y); 
+                        }
+                    }
+                }
         }
     }
+}
 
-    //  * transform to canonical view volume
-    //  * clip in 3D
-    //  * project to 2D
-    //  * draw line
+function createCube(center, width, height, depth){
+    //center x, y, z values
+    let cube_x = center.x;
+    let cube_y = center.y;
+    let cube_z = center.z;
+
+    let cube = {
+        vertices: [
+        //calculate edges and vertices from center, width, height, and depth
+        // left bottom front = center + 1/2 depth - 1/2 width - 1/2 height
+        // right bottom front = center + 1/2 depth + 1/2 width - 1/2 height
+        // left top front = center + 1/2 depth - 1/2 width + 1/2 height
+        // right top front = center + 1/2 depth + 1/2 width + 1/2 height
+
+        // left bottom back = center - 1/2 depth - 1/2 width - 1/2 height
+        // right bottom back = center - 1/2 depth + 1/2 width - 1/2 height
+        // left top back = center - 1/2 depth - 1/2 width + 1/2 height
+        // right top back = center - 1/2 depth + 1/2 width + 1/2 height
+            //front
+             //left
+            new Vector4(cube_x - (width/2), cube_y - (height/2), cube_z + (depth/2), 1),
+            new Vector4(cube_x - (width/2), cube_y + (height/2), cube_z + (depth/2), 1),
+             // right
+            new Vector4(cube_x + (width/2), cube_y - (height/2), cube_z + (depth/2), 1),
+            new Vector4(cube_x + (width/2), cube_y + (height/2), cube_z + (depth/2), 1),
+            //back
+             //left
+            new Vector4(cube_x - (width/2), cube_y - (height/2), cube_z - (depth/2), 1),
+            new Vector4(cube_x - (width/2), cube_y + (height/2), cube_z - (depth/2), 1),
+             //right
+            new Vector4(cube_x + (width/2), cube_y - (height/2), cube_z - (depth/2), 1),
+            new Vector4(cube_x + (width/2), cube_y + (height/2), cube_z - (depth/2), 1)
+        ],
+        edges: [
+            [0, 1, 3, 2, 0],
+            [4, 5, 7, 6, 4],
+            [0, 4],
+            [1, 5],
+            [2, 6],
+            [3, 7]
+        ]
+
+    };
+    return cube;
+}
+
+function createCylinder(center, radius, height, sides){
+    //circle x, y, z
+    let circle_x = center.x;
+    let circle_y = center.y;
+    let circle_z = center.z;
+
+    let x = 0;
+    let z = 0;
+    let radians = 0;
+    let p1 = new Vector4((circle_x + radius), circle_y, circle_z, 1);
+    let p0 = new Vector4(p1.x, p1.y, p1.z, 1);
+    let vertices = [];
+    /*
+     //use for loop with num_sections
+        let x = 0;
+        let y = 0;
+        let radians = 0;
+        let pt1 = new Object({x: (center.x + radius), y: (center.y)});
+        let pt0 = new Object({x: pt1.x, y: pt1.y});
+        let pt_holder = [];
+
+        for (let i = 0; i < this.num_curve_sections; i++){
+            //determine where to draw lines
+            radians = radians + ((Math.PI*2)/this.num_curve_sections);
+            x = center.x + Math.round(radius * (Math.cos(radians)));
+            y = center.y + Math.round(radius * (Math.sin(radians)));
+
+            let point = new Object({x: x, y: y});
+            pt_holder.push(point);
+
+            pt1.x = x;
+            pt1.y = y;        
+            this.drawLine(pt0, pt1, color, ctx);
+            pt0.x = pt1.x;
+            pt0.y = pt1.y;
+        }
+    */
+
+    //vertices of circles
+    // * top circle: (x, y + 1/2*height, z)
+    for (let i = 0; i < sides; i++){
+        radians = radians + ((Math.PI*2)/sides);
+        x = circle_x + Math.round(radius * (Math.cos(radians)));
+        z = circle_z + Math.round(radius * (Math.sin(radians)));
+
+        let point
+    }
+    
+    // * bottom circle
+
 
 }
+
+function createCone(center, radius, height, sides){
+
+}
+
 // Get outcode for vertex (parallel view volume)
 function outcodeParallel(vertex) {
     let outcode = 0;
@@ -674,27 +552,27 @@ function clipLineParallel(line) {
             // find t, and then find x, y, and z
             // change so in bitwise order LRBTNF
 
-            if (inter_out & LEFT == LEFT) {
+            if ((inter_out & LEFT) == LEFT) {
 
                 t = (-1 - p0.x)/(delta_x);
 
-            } else if (inter_out & RIGHT == RIGHT) {
+            } else if ((inter_out & RIGHT) == RIGHT) {
 
-                t = (1 - p0.x)/(-delta_x);
+                t = (1 - p0.x)/(delta_x);
 
-            } else if (inter_out & BOTTOM == BOTTOM) {
+            } else if ((inter_out & BOTTOM) == BOTTOM) {
 
                 t = (-1 - p0.y)/(delta_y);
 
-            } else if (inter_out & TOP == TOP){
+            } else if ((inter_out & TOP) == TOP){
 
                 t = (1 - p0.y)/(delta_y);
 
-            } else if (inter_out & NEAR == NEAR) {
+            } else if ((inter_out & NEAR) == NEAR) {
 
                 t = (-p0.z)/(delta_z);
 
-            } else if (inter_out & FAR == FAR) {
+            } else if ((inter_out & FAR) == FAR) {
 
                 t = (-1 - p0.z)/(delta_z);
             }
@@ -747,8 +625,8 @@ function clipLinePerspective(line, z_min) {
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
     let out0 = outcodePerspective(p0, z_min);
     let out1 = outcodePerspective(p1, z_min);
-    console.log(p0, p1, out0, out1);
-    console.log(result);
+    //console.log(p0, p1, out0, out1);
+    //console.log(result);
     
     // TODO: implement clipping here!
     let accepted = false;
@@ -757,16 +635,16 @@ function clipLinePerspective(line, z_min) {
         if ((out0 | out1) == 0){
             //inside view rectangle
             //trivial accepted
-            console.log("accepted");
+            //console.log("accepted");
             accepted = true;
         } else if ((out0 & out1) != 0) {
             //outside view, in same region
             //trivial rejected, don't draw
             accepted = true;
-            console.log("rejected");
+            //console.log("rejected");
             result = null;
         } else {
-            console.log("clip time");
+            //console.log("clip time");
             let inter_out;
             let t;
             let x;
@@ -790,27 +668,27 @@ function clipLinePerspective(line, z_min) {
 
             // find t, and then find x, y, and z
             // change so in bitwise order LRBTNF
-            if (inter_out & LEFT == LEFT) {
+            if ((inter_out & LEFT) == LEFT) {
 
                 t = (-p0.x + p0.z)/(delta_x - delta_z);
                 
-            } else if (inter_out & RIGHT == RIGHT) {
+            } else if ((inter_out & RIGHT) == RIGHT) {
                 
                 t = (p0.x + p0.z)/(-delta_x - delta_z);
 
-            } else if (inter_out & BOTTOM == BOTTOM) {
+            } else if ((inter_out & BOTTOM) == BOTTOM) {
 
                 t = (-p0.y + p0.z)/(delta_y - delta_z);
 
-            } else if (inter_out & TOP == TOP){
+            } else if ((inter_out & TOP) == TOP){
                 
                 t = (p0.y + p0.z)/(-delta_y - delta_z);
 
-            } else if (inter_out & NEAR == NEAR) {
+            } else if ((inter_out & NEAR) == NEAR) {
 
                 t = (p0.z - z_min)/(-delta_z);
 
-            } else if (inter_out & FAR == FAR) {
+            } else if ((inter_out & FAR) == FAR) {
 
                 t = (-p0.z - 1)/(delta_z);
 
@@ -831,14 +709,14 @@ function clipLinePerspective(line, z_min) {
                         y: p1.y,
                         z: p1.z
                     }};
-            console.log(result);
+            //console.log(result);
 
             out0 = outcodePerspective(p0, z_min);
             out1 = outcodePerspective(p1, z_min);
         }
         
     }
-    console.log(result);
+    //console.log(result);
     return result;
 }
 
@@ -861,6 +739,7 @@ function onKeyDown(event) {
             break;
         case 65: // A key
             console.log("A");
+            //subtract u axis
             break;
         case 68: // D key
             console.log("D");
