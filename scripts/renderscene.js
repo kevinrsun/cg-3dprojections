@@ -140,7 +140,7 @@ function animate(timestamp) {
 
     // step 4: request next animation frame (recursively calling same function)
     // (may want to leave commented out while debugging initially)
-    //window.requestAnimationFrame(animate);
+    window.requestAnimationFrame(animate);
 }
 
 // Main drawing code - use information contained in variable `scene`
@@ -726,29 +726,40 @@ function onKeyDown(event) {
     //a = prp - 0, 0, 0 
     //prp + u axis => left + right
     //prp + n axis => forward + back
-    let n = scene.view.prp.subtract(srp);
+    let n = scene.view.prp.subtract(scene.view.srp);
+    n.normalize();
     let u = scene.view.vup.cross(n);
+    u.normalize();
+    let v = n.cross(u);
 
     switch (event.keyCode) {
         case 37: // LEFT Arrow
             console.log("left");
-            
+            scene.view.srp = scene.view.srp.subtract(v);
             break;
         case 39: // RIGHT Arrow
             console.log("right");
+            scene.view.srp = scene.view.srp.add(v);
             break;
         case 65: // A key
             console.log("A");
-            //subtract u axis
+            scene.view.prp = scene.view.prp.subtract(u);
+            scene.view.srp = scene.view.srp.subtract(u);
             break;
         case 68: // D key
             console.log("D");
+            scene.view.prp = scene.view.prp.add(u);
+            scene.view.srp = scene.view.srp.add(u);
             break;
         case 83: // S key
             console.log("S");
+            scene.view.prp = scene.view.prp.add(n);
+            scene.view.srp = scene.view.srp.add(n);
             break;
         case 87: // W key
             console.log("W");
+            scene.view.prp = scene.view.prp.subtract(n);
+            scene.view.srp = scene.view.srp.subtract(n);
             break;
     }
 }
