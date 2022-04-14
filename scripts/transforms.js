@@ -181,6 +181,32 @@ function mat4x4RotateZ(mat4x4, theta) {
                      [0, 0, 0, 1]];
 }
 
+function mat4x4VRotation(mat4x4, theta, v){
+    theta = theta * (Math.PI/180);
+    mat4x4.values = [
+                    [  (Math.cos(theta) + (Math.pow(v.x, 2))*(1 - Math.cos(theta))), 
+                       (v.x * v.y * (1 - Math.cos(theta)) - (v.z * Math.sin(theta))), 
+                       (v.x * v.z * (1 - Math.cos(theta)) + (v.y * Math.sin(theta))),
+                       0
+                    ],
+                    [
+                       (v.y * v.x * (1 - Math.cos(theta)) + (v.z * Math.sin(theta))),
+                       (Math.cos(theta) + (Math.pow(v.y, 2) * (1 - Math.cos(theta)))),
+                       (v.y * v.z * (1 - Math.cos(theta)) - (v.x * Math.sin(theta))),
+                       0
+                    ],
+                    [
+                       (v.z * v.x * (1 - Math.cos(theta)) - (v.y * Math.sin(theta))),
+                       (v.z * v.y * (1 - Math.cos(theta)) - (v.x * Math.sin(theta))),
+                       (Math.cos(theta) + (Math.pow(v.z, 2) * (1 - Math.cos(theta)))),
+                       0
+                    ],
+                    [
+                        0, 0, 0, 1
+                    ]
+                ]
+}
+
 // set values of existing 4x4 matrix to the shear parallel to the xy-plane matrix
 function mat4x4ShearXY(mat4x4, shx, shy) {
     // mat4x4.values = ...;
