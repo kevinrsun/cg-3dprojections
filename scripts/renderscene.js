@@ -103,6 +103,10 @@ function init() {
                     [3, 8],
                     [4, 9]
                 ],
+                animation: {
+                    axis: 'x',
+                    rps: 0.5
+                },
                 matrix: new Matrix(4, 4)
             }, 
             {
@@ -126,14 +130,42 @@ function init() {
 // Animation loop - repeatedly calls rendering code
 function animate(timestamp) {
     // step 1: calculate time (time since start)
-    let time = timestamp - start_time;
-    
+    let time = (timestamp - start_time)/1000.0;
+
     // step 2: transform models based on time
     // TODO: implement this!
-    let rotate_x = new Matrix(4,4);
+    for(let i = 0; i < scene.models.length; i++) {
+        if(scene.models[i].animation != null) {
+            if(scene.models[i].animation.axis == "x") {
+                let rotate_x = new Matrix(4,4);
+                mat4x4RotateX(rotate_x, time*scene.models[i].animation.rps*(2*Math.PI));
 
-    mat4x4RotateX(rotate_x, time+1);
+                for(let i = 0; i < scene.models[0].vertices.length; i++) {
+    
+                    let newValues = rotate_x.mult(scene.models[0].vertices[i]).values;
+                    scene.models[0].vertices[i] = Vector4(newValues[0], newValues[1], newValues[2], newValues[3]);
+                }
+            } else if(scene.models[i].animation.axis == "y") {
+                let rotate_y = new Matrix(4,4);
+                mat4x4RotateY(rotate_y, time*scene.models[i].animation.rps*(2*Math.PI));
 
+                for(let i = 0; i < scene.models[0].vertices.length; i++) {
+    
+                    let newValues = rotate_y.mult(scene.models[0].vertices[i]).values;
+                    scene.models[0].vertices[i] = Vector4(newValues[0], newValues[1], newValues[2], newValues[3]);
+                }
+            }  else if(scene.models[i].animation.axis == "z") {
+                let rotate_z = new Matrix(4,4);
+                mat4x4RotateZ(rotate_z, time*scene.models[i].animation.rps*(2*Math.PI));
+
+                for(let i = 0; i < scene.models[0].vertices.length; i++) {
+    
+                    let newValues = rotate_z.mult(scene.models[0].vertices[i]).values;
+                    scene.models[0].vertices[i] = Vector4(newValues[0], newValues[1], newValues[2], newValues[3]);
+                }
+            } 
+        }
+    }
 
     // step 3: draw scene
     drawScene();
