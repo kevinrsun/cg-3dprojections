@@ -135,7 +135,7 @@ function animate(timestamp) {
     // step 2: transform models based on time
     // TODO: implement this!
     for(let i = 0; i < scene.models.length; i++) {
-        if(scene.models[i].animation != null) {
+        if(scene.models[i].type == "generic" && scene.models[i].animation != null) {
             if(scene.models[i].animation.axis == "x") {
                 let rotate_x = new Matrix(4,4);
                 mat4x4RotateX(rotate_x, time*scene.models[i].animation.rps*(2*Math.PI));
