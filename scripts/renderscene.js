@@ -103,10 +103,10 @@ function init() {
                     [3, 8],
                     [4, 9]
                 ],
-                animation: {
-                    axis: 'x',
-                    rps: 0.5
-                },
+                // animation: {
+                //     axis: 'x',
+                //     rps: 0.5
+                // },
                 matrix: new Matrix(4, 4)
             }, 
             {
