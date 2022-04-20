@@ -63,16 +63,30 @@ function init() {
             }, 
             {
                 type: 'cube',
-                center: Vector3(4, 4, -10),
-                width: 8,
-                height: 8,
-                depth: 8
+                center: Vector3(25, 4, -30),
+                width: 2,
+                height: 2,
+                depth: 2
+            },
+            {
+                type: 'cube',
+                center: Vector3(25, 4, -33),
+                width: 2,
+                height: 2,
+                depth: 2
+            },
+            {
+                type: 'cube',
+                center: Vector3(25, 6, -31),
+                width: 2,
+                height: 2,
+                depth: 2
             },
             {
                 type: 'cylinder',
-                center: Vector3(12, 10, -19),
-                radius: 3,
-                height: 10,
+                center: Vector3(-5, 4, -15),
+                radius: 0.9,
+                height: 1.8,
                 sides: 12,
                 animation: {
                     axis: "y",
@@ -84,6 +98,94 @@ function init() {
                 center: Vector3(30, 0, -39),
                 radius: 3,
                 height: 10,
+                sides: 12,
+                animation: {
+                    axis: "y",
+                    rps: 0.5
+                }
+            },
+            {
+                type: 'cone',
+                center: Vector3(-10, 0, -28),
+                radius: 5,
+                height: 20,
+                sides: 12,
+                animation: {
+                    axis: "y",
+                    rps: 0.5
+                }
+            },
+            {
+                type: 'cone',
+                center: Vector3(-20, 0, -40),
+                radius: 7,
+                height: 26,
+                sides: 12,
+                animation: {
+                    axis: "y",
+                    rps: 0.5
+                }
+            },
+            {
+                type: 'cone',
+                center: Vector3(-5, 0, -34),
+                radius: 3,
+                height: 10,
+                sides: 12,
+                animation: {
+                    axis: "y",
+                    rps: 0.5
+                }
+            },
+            {
+                type: 'cone',
+                center: Vector3(-20, 0, -10),
+                radius: 3,
+                height: 10,
+                sides: 12,
+                animation: {
+                    axis: "y",
+                    rps: 0.5
+                }
+            },
+            {
+                type: 'cone',
+                center: Vector3(30, 0, -50),
+                radius: 7,
+                height: 26,
+                sides: 12,
+                animation: {
+                    axis: "y",
+                    rps: 0.5
+                }
+            },
+            {
+                type: 'cylinder',
+                center: Vector3(6, 4, -20),
+                radius: 0.9,
+                height: 1.8,
+                sides: 12,
+                animation: {
+                    axis: "y",
+                    rps: 0.5
+                }
+            },
+            {
+                type: 'cylinder',
+                center: Vector3(0, 4, -35),
+                radius: 0.9,
+                height: 1.8,
+                sides: 12,
+                animation: {
+                    axis: "y",
+                    rps: 0.5
+                }
+            },
+            {
+                type: 'cylinder',
+                center: Vector3(37, 4, -38),
+                radius: 0.9,
+                height: 1.8,
                 sides: 12,
                 animation: {
                     axis: "y",
